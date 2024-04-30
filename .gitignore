@@ -1,4 +1,2 @@
-/backend/Lib
-/backend/Include
-/backend/__pycache__
-/backend/Scripts
+/backend/.vervel
+/backend/node_modules
