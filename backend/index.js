@@ -2,7 +2,6 @@ const express = require("express");
 const { Database } = require("arangojs");
 const casual = require("casual");
 const app = express();
-const port = process.env.PORT || 3000;
 const arangoURL = "https://de8f177248f7.arangodb.cloud:8529";
 const dbName = "_systems";
 const username = "root";
@@ -57,6 +56,7 @@ app.get("/insert-crimes", async (req, res) => {
 function generateRandomCoordinate(min, max) {
   return Math.random() * (max - min) + min;
 }
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(`Server is running on port ${server.address().port}`);
 });
