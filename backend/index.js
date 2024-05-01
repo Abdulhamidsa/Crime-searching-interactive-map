@@ -4,7 +4,7 @@ const casual = require("casual");
 const app = express();
 const port = process.env.PORT || 3000;
 const arangoURL = "https://de8f177248f7.arangodb.cloud:8529";
-const dbName = "_system";
+const dbName = "_systems";
 const username = "root";
 const password = "5Qtab6B84KlZBSso9kkg";
 
