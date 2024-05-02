@@ -1,2 +1,4 @@
-/backend/.vercel
-/backend/node_modules
+/backend/Lib
+/backend/Scripts
+/backend/Include
+/backend/Pyvenv.cfg
