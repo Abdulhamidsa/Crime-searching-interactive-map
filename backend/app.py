@@ -43,26 +43,102 @@ def check_token(username, token):
 username = 'Abdulhamidsa'
 token = '2d49d619c5c231b2c7743d9ffaf3201980bf711a'
 
-@get('/crimes')
+@get('/insert-crimes')
 def get_crimes():
+    # Function to check if a collection exists and create it if it doesn't
+    def ensure_collection_exists(collection_name, collection_type="document"):
+        collection_query = {
+            "query": f"""
+                LET collectionExists = (FOR c IN COLLECTIONS() FILTER c.name == '{collection_name}' RETURN c)
+                RETURN LENGTH(collectionExists) > 0
+            """
+        }
+        result = x.db(collection_query)
+        exists = result['result'][0]
+
+        if not exists:
+            if collection_type == "document":
+                create_query = {
+                    "query": f"CREATE COLLECTION {collection_name}"
+                }
+            elif collection_type == "edge":
+                create_query = {
+                    "query": f"CREATE EDGE COLLECTION {collection_name}"
+                }
+            x.db(create_query)
+
+    # Ensure the required collections exist
+    ensure_collection_exists("crimes")
+    ensure_collection_exists("criminals")
+    ensure_collection_exists("associates")
+    ensure_collection_exists("relationships", "edge")
+
+    # Check token validity
     if check_token(username, token) == 200:
         crimes_response = requests.get('https://abdulhamidsa.pythonanywhere.com/crimes')
         if crimes_response.status_code == 200:
-            return json.dumps(crimes_response.json())
+            # Extract JSON data from the response
+            crimes_data = crimes_response.json()
+            criminals_data = []
+            associates_data = []
+            edges_data = []
+
+            if crimes_data:
+                for crime in crimes_data:
+                    # Check for a criminal and add to criminals_data if exists
+                    if crime['criminal']:
+                        crime['criminal']['type'] = 'criminal'
+                        criminals_data.append(crime['criminal'])
+
+                    # Check for suspects and add to criminals_data if exist
+                    if crime['suspects']:
+                        for suspect in crime['suspects']:
+                            suspect['type'] = 'suspect'
+                            criminals_data.append(suspect)
+
+                    # Check for associates and add to associates_data
+                    if crime.get('associates'):
+                        for associate in crime['associates']:
+                            associates_data.append(associate)
+
+                    # Insert the crime into the crimes collection
+                    query = {
+                        "query": """
+                            INSERT @crime INTO crimes RETURN NEW
+                        """,
+                        "bindVars": {
+                            "crime": crime
+                        }
+                    }
+                    res = x.db(query)
+
+                # Insert the extracted criminals into the criminals collection
+                for criminal in criminals_data:
+                    query = {
+                        "query": """
+                            INSERT @criminal INTO criminals RETURN NEW
+                        """,
+                        "bindVars": {
+                            "criminal": criminal
+                        }
+                    }
+                    res = x.db(query)
+                for associate in associates_data:
+                    query = {
+                        "query": """
+                            INSERT @associate INTO associates RETURN NEW
+                        """,
+                        "bindVars": {
+                            "associate": associate
+                        }
+                    }
+                    res = x.db(query)
+            return "Crimes, criminals, associates, and relationships data fetched and saved to the database"
         else:
             response.status = crimes_response.status_code
             return json.dumps({"error": "Failed to fetch crime data."})
     else:
         return json.dumps({"error": "Token is invalid."})
-    
-
-
-
-
-
-
-
-
 
 
 
