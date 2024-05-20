@@ -10,11 +10,13 @@ import os
 @get("/")
 def _():
   ic("xxxxxxx")
-  return "5555"
+  return "BACKEND RUNNING READY FOR REQUESTS "
  
+load_dotenv('.env')
+username = os.getenv('username')
+token = os.getenv('token')
 
-
-@get("/crimes")
+@get("/get-crimes")
 def _():
     query = {
         "query": """
@@ -24,24 +26,23 @@ def _():
     }
     res = x.db(query)
     if res["error"] == False:
-        response.content_type = 'application/json'
+        response.headers["Access-Control-Allow-Origin"] = "*" 
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"  
+        response.headers["Access-Control-Allow-Headers"] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"  
+        response.content_type = "application/json"
         return json.dumps(res["result"])
     else:
-        ic("Error fetching crimes. Error message:", res["errorMessage"])
+        print("Error fetching crimes. Error message:", res["errorMessage"])
         return "Error fetching crimes"
 ##############################
 
 def check_token(username, token):
     response = requests.get(
-        'https://www.pythonanywhere.com/api/v0/user/{username}/cpu/'.format(
-            username=username
-        ),
-        headers={'Authorization': 'Token {token}'.format(token=token)}
+        f'https://www.pythonanywhere.com/api/v0/user/{username}/cpu/',
+        headers={'Authorization': f'Token {token}'}
     )
     return response.status_code
 
-username = 'Abdulhamidsa'
-token = '2d49d619c5c231b2c7743d9ffaf3201980bf711a'
 
 @get('/insert-crimes')
 def get_crimes():
