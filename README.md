@@ -8,3 +8,4 @@ Welcome to the Crime Data Interactive Map! This project aims to provide a visual
 Frontend: Next.js
 Backend: Python
 Containerization: Docker
+Server Pythonanywhere
