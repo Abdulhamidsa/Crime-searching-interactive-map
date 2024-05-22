@@ -89,19 +89,12 @@ def get_crimes():
                     # Check for a criminal and add to criminals_data if exists
                     if crime['criminal']:
                         crime['criminal']['type'] = 'criminal'
+                        crime['criminal']['crime_type'] = crime['crime_type']  # Add the crime type to the criminal
                         criminals_data.append(crime['criminal'])
-
                     # Check for suspects and add to criminals_data if exist
-                    if crime['suspects']:
-                        for suspect in crime['suspects']:
-                            suspect['type'] = 'suspect'
-                            criminals_data.append(suspect)
-
-                    # Check for associates and add to associates_data
                     if crime.get('associates'):
                         for associate in crime['associates']:
                             associates_data.append(associate)
-
                     # Insert the crime into the crimes collection
                     query = {
                         "query": """
@@ -112,7 +105,6 @@ def get_crimes():
                         }
                     }
                     res = x.db(query)
-
                 # Insert the extracted criminals into the criminals collection
                 for criminal in criminals_data:
                     query = {
@@ -124,6 +116,7 @@ def get_crimes():
                         }
                     }
                     res = x.db(query)
+                    
                 for associate in associates_data:
                     query = {
                         "query": """
