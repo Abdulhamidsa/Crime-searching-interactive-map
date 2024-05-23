@@ -46,7 +46,6 @@ def check_token(username, token):
 
 @get('/insert-crimes')
 def get_crimes():
-    # Function to check if a collection exists and create it if it doesn't
     def ensure_collection_exists(collection_name, collection_type="document"):
         collection_query = {
             "query": f"""
@@ -73,7 +72,6 @@ def get_crimes():
     ensure_collection_exists("criminals")
     ensure_collection_exists("associates")
     ensure_collection_exists("relationships", "edge")
-
     # Check token validity
     if check_token(username, token) == 200:
         crimes_response = requests.get('https://abdulhamidsa.pythonanywhere.com/crimes')
@@ -133,13 +131,24 @@ def get_crimes():
             return json.dumps({"error": "Failed to fetch crime data."})
     else:
         return json.dumps({"error": "Token is invalid."})
-
-
-
-
-
-
-
+@get('/getass/<criminal_id>')
+def get_potential_suspects(criminal_id):
+    query = f"""
+        LET criminal_custom_id = "{criminal_id}"
+        FOR criminal IN criminals
+            FILTER criminal.id == criminal_custom_id
+            FOR v, e, p IN OUTBOUND criminal._id relationships
+                FILTER e.type == "potential suspect"
+                RETURN v
+        """
+    payload = {
+        "query": query
+    }
+    response = x.db(payload)
+    if not response.get("error"):
+        return response
+    else:
+        raise Exception(f"Query failed with error message: {response.get('errorMessage')}")
 
 ##############################
 # @get("/get-crimes")
