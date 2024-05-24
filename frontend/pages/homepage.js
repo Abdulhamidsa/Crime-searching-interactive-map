@@ -1,16 +1,14 @@
-import { MenuItem, Icon, Box, Select, Button, Divider, VStack, HStack, Drawer, DrawerOverlay, DrawerContent, DrawerFooter, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { MenuList, MenuButton, Menu } from "@chakra-ui/react";
-
-import MapGL from "react-map-gl"; // Import MapGL instead of Map
+import { Button, Drawer, HStack, DrawerOverlay, DrawerFooter, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, VStack, Checkbox, CheckboxGroup, Menu, MenuButton, MenuItem, MenuList, Icon, Box, Text, Divider } from "@chakra-ui/react";
+import MapGL from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
-
+import { MdFilterList, MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
 import styles from "@/styles/Home.module.css";
 import { Marker, Source, Layer } from "react-map-gl";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
 
+// SERVERSIDE GET ALL CRIMES FROM DATABASE
 export async function getServerSideProps() {
   try {
     const res = await fetch("http://localhost/get-crimes");
@@ -34,31 +32,31 @@ export async function getServerSideProps() {
 }
 
 function HomePage({ data }) {
-  console.log(data);
   const mapboxToken = "pk.eyJ1IjoiYWJvb29kc2EiLCJhIjoiY2xtYXcwcDZtMHp3ODNjcXE0YWY4dmNrMyJ9.0sDQp8tgynWP70CQOLZkrw";
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCrime, setSelectedCrime] = useState(null);
-  const [loading, setLoading] = useState(null);
   const [location, setLocation] = useState({ latitude: 55.6761, longitude: 12.5683, zoom: 10 });
   const [showSuspects, setShowSuspects] = useState(false);
   const [selectedType, setSelectedType] = useState("");
   const [selectedSeverity, setSelectedSeverity] = useState("");
+  const { isOpen: isFilterOpen, onOpen: onFilterOpen, onClose: onFilterClose } = useDisclosure();
   const [suspects, setSuspects] = useState(null);
+  const [selectedGender, setSelectedGender] = useState([]);
+  const [key, setKey] = useState(0);
+
+  console.log(suspects);
   const filteredCrimes = data.filter((crime) => {
-    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity);
+    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
   });
 
   const fetchSuspects = async (crime_id) => {
     try {
       const response = await fetch(`/api/getPotentialSuspects?criminal_id=${crime_id}`);
-      console.log(response);
-
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
       const results = data.result;
-      console.log(results);
       setSuspects(results);
     } catch (error) {
       console.log(error);
@@ -69,11 +67,11 @@ function HomePage({ data }) {
     setSelectedCrime(crime);
     onOpen();
   };
-  // console.log(suspects);
+
   const handleClose = () => {
-    setSelectedCrime(false);
+    setSelectedCrime(null);
     setShowSuspects(false);
-    setSuspects(false);
+    setSuspects(null);
     onClose();
   };
 
@@ -83,24 +81,27 @@ function HomePage({ data }) {
     setShowSuspects(true);
     onClose();
   };
+
   const handleReturnToMap = () => {
     setLocation({ latitude: 55.6761, longitude: 12.5683, zoom: 10 });
     setShowSuspects(false);
-    setSuspects(false);
-
+    setSuspects(null);
     onOpen();
   };
+
   const getColorFromSeverity = (severity) => {
     const colorScale = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
     const index = Math.min(severity, colorScale.length) - 1;
     return colorScale[index];
   };
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  console.log(selectedCrime);
-  console.log(selectedType);
-  console.log();
+
+  const resetFilters = () => {
+    setSelectedType("");
+    setSelectedSeverity("");
+    setSelectedGender([]);
+    setKey((prevKey) => prevKey + 1);
+  };
+
   return (
     <>
       <Box className={styles.main_container}>
@@ -119,59 +120,75 @@ function HomePage({ data }) {
             keyboard={true}
             interactive={true}
           >
-            <Menu>
-              <MenuButton as={Button}> {`Filter by: ${selectedType || "All"}`}</MenuButton>
-              <MenuList>
-                <MenuItem onClick={() => setSelectedType("")}>
-                  <Icon as={MdOutlineRobbery} mr={2} />
-                  All
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedType("Robbery")}>
-                  <Icon as={MdOutlineRobbery} mr={2} />
-                  Robbery
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedType("Murder")}>
-                  <Icon as={MdOutlineCrime} mr={2} />
-                  Murder
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedType("Cybercrime")}>
-                  <Icon as={MdOutlineComputer} mr={2} />
-                  Cybercrime
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedType("Sex Trafficking")}>
-                  <Icon as={MdOutlinePeopleAlt} mr={2} />
-                  Sex Trafficking
-                </MenuItem>
-              </MenuList>
-            </Menu>
-            <Menu>
-              <MenuButton as={Button}> {`Filter by severity: ${selectedSeverity || "All"}`}</MenuButton>
-              <MenuList>
-                <MenuItem onClick={() => setSelectedSeverity("")}>
-                  <Icon as={MdOutlineRobbery} mr={2} />
-                  All
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedSeverity(1)}>
-                  <Icon as={MdOutlineRobbery} mr={2} />1
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedSeverity(2)}>
-                  <Icon as={MdOutlineCrime} mr={2} />2
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedSeverity(3)}>
-                  <Icon as={MdOutlineComputer} mr={2} />3
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedSeverity(4)}>
-                  <Icon as={MdOutlinePeopleAlt} mr={2} />4
-                </MenuItem>
-                <MenuItem onClick={() => setSelectedSeverity(5)}>
-                  <Icon as={MdOutlinePeopleAlt} mr={2} />5
-                </MenuItem>
-              </MenuList>
-            </Menu>
+            <Box position="fixed" left={5} top={5}>
+              {!selectedCrime && (
+                <Button onClick={onFilterOpen} leftIcon={<Icon as={MdFilterList} />}>
+                  Filter
+                </Button>
+              )}
+            </Box>
 
+            <Drawer isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
+              <DrawerOverlay>
+                <DrawerContent>
+                  <DrawerCloseButton />
+                  <DrawerHeader>Filter Options</DrawerHeader>
+
+                  <DrawerBody>
+                    <VStack flex="flex-start" justify="start">
+                      <Menu>
+                        <MenuButton as={Button}> {`Filter by: ${selectedType || "All"}`}</MenuButton>
+                        <MenuList>
+                          <MenuItem onClick={() => setSelectedType("")}>
+                            <Icon as={MdOutlineRobbery} mr={2} />
+                            All
+                          </MenuItem>
+                          <MenuItem onClick={() => setSelectedType("Robbery")}>
+                            <Icon as={MdOutlineRobbery} mr={2} />
+                            Robbery
+                          </MenuItem>
+                          <MenuItem onClick={() => setSelectedType("Murder")}>
+                            <Icon as={MdOutlineCrime} mr={2} />
+                            Murder
+                          </MenuItem>
+                          <MenuItem onClick={() => setSelectedType("Cybercrime")}>
+                            <Icon as={MdOutlineComputer} mr={2} />
+                            Cybercrime
+                          </MenuItem>
+                          <MenuItem onClick={() => setSelectedType("Sex Trafficking")}>
+                            <Icon as={MdOutlinePeopleAlt} mr={2} />
+                            Sex Trafficking
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                      <Menu>
+                        <MenuButton as={Button}> {`Filter by severity: ${selectedSeverity || "All"}`}</MenuButton>
+                        <MenuList>
+                          <MenuItem onClick={() => setSelectedSeverity("")}>All</MenuItem>
+                          <MenuItem onClick={() => setSelectedSeverity(1)}>1</MenuItem>
+                          <MenuItem onClick={() => setSelectedSeverity(2)}>2</MenuItem>
+                          <MenuItem onClick={() => setSelectedSeverity(3)}>3</MenuItem>
+                          <MenuItem onClick={() => setSelectedSeverity(4)}>4</MenuItem>
+                          <MenuItem onClick={() => setSelectedSeverity(5)}>5</MenuItem>
+                        </MenuList>
+                      </Menu>
+                      <CheckboxGroup key={key} value={selectedGender} onChange={setSelectedGender}>
+                        <Checkbox value="Male">Male</Checkbox>
+                        <Checkbox value="Female">Female</Checkbox>
+                      </CheckboxGroup>
+                    </VStack>
+                  </DrawerBody>
+                  <DrawerFooter>
+                    <Button colorScheme="blue" onClick={resetFilters}>
+                      Reset Filters
+                    </Button>
+                  </DrawerFooter>
+                </DrawerContent>
+              </DrawerOverlay>
+            </Drawer>
             {showSuspects && (
               <Button className={styles.reutn_to_map_button} onClick={handleReturnToMap}>
-                Return Tdo Map
+                Return To Map
               </Button>
             )}
             {data && (
@@ -248,7 +265,6 @@ function HomePage({ data }) {
                       <Divider my={4} />
                       <VStack align="start" spacing={2} mt={5}>
                         <Text fontWeight="">Crime ID: {selectedCrime.crime_id}</Text>
-                        {/* <Text fontWeight="">Crime ID: {selectedCrime._id.split("/")[1]}</Text> */}
                         <Text fontWeight="">Crime Type: {selectedCrime.crime_type}</Text>
                         <Text fontWeight="">Description: {selectedCrime.description}</Text>
                         <Text mt="4" fontSize="1.25rem" fontWeight="bold">
@@ -267,7 +283,7 @@ function HomePage({ data }) {
                           ))}
                         </HStack>
                         <Divider my={4} />
-                        <Button alignSelf="center" onClick={() => handleSuspects(selectedCrime.criminal.id)}>
+                        <Button alignSelf="flex-start" onClick={() => handleSuspects(selectedCrime.criminal.id)}>
                           Display Suspected Gang Members
                         </Button>
                       </VStack>
