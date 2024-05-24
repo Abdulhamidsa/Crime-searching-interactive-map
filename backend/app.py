@@ -1,62 +1,82 @@
 from bottle import get, template, static_file, response
-import x
-from icecream import ic
-import requests
-import json  
-from dotenv import load_dotenv
-import os
+import x  # Assuming 'x' is your database client for ArangoDB
+from icecream import ic  # For debugging output
+import requests  # To make HTTP requests
+import json  # For JSON handling
+from dotenv import load_dotenv  # To load environment variables from a .env file
+import os  # For operating system interactions
 
 ##############################
-@get("/")
-def _():
-  ic("xxxxxxx")
-  return "BACKEND RUNNING READY FOR REQUESTS "
- 
+
+
+# Load environment variables from a .env file
 load_dotenv('.env')
 username = os.getenv('username')
 token = os.getenv('token')
 
+
+##############################
+
+
+# CHECK TOKEN IF MATCH
+def check_token(username, token):
+    # Make a GET request to check the validity of the token
+    response = requests.get(
+        f'https://www.pythonanywhere.com/api/v0/user/{username}/cpu/',
+        headers={'Authorization': f'Token {token}'}
+    )
+    return response.status_code  # Return the status code of the response
+
+
+################################
+
+# END POINTS - GET REQUEST
+@get("/")
+def _():
+    # Print a debug message and return a confirmation string that the backend is running
+    ic("xxxxxxx")
+    return "BACKEND RUNNING READY FOR REQUESTS "
+################################
 @get("/get-crimes")
 def _():
+    # Query to fetch all crimes from the 'crimes' collection
     query = {
         "query": """
             FOR crime IN crimes
             RETURN crime
         """
     }
-    res = x.db(query)
+    res = x.db(query)  # Execute the query using the database client
     if res["error"] == False:
+        # Set response headers to allow cross-origin requests
         response.headers["Access-Control-Allow-Origin"] = "*" 
         response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"  
         response.headers["Access-Control-Allow-Headers"] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"  
         response.content_type = "application/json"
+        # Return the query results as JSON
         return json.dumps(res["result"])
     else:
+        # Print an error message if the query fails
         print("Error fetching crimes. Error message:", res["errorMessage"])
         return "Error fetching crimes"
+    
+
 ##############################
-
-def check_token(username, token):
-    response = requests.get(
-        f'https://www.pythonanywhere.com/api/v0/user/{username}/cpu/',
-        headers={'Authorization': f'Token {token}'}
-    )
-    return response.status_code
-
 
 @get('/insert-crimes')
 def get_crimes():
     def ensure_collection_exists(collection_name, collection_type="document"):
+        # Query to check if a collection exists
         collection_query = {
             "query": f"""
                 LET collectionExists = (FOR c IN COLLECTIONS() FILTER c.name == '{collection_name}' RETURN c)
                 RETURN LENGTH(collectionExists) > 0
             """
         }
-        result = x.db(collection_query)
-        exists = result['result'][0]
-
+        result = x.db(collection_query)  # Execute the query
+        exists = result['result'][0]  # Check if the collection exists
         if not exists:
+            # Create the collection if it does not exist
             if collection_type == "document":
                 create_query = {
                     "query": f"CREATE COLLECTION {collection_name}"
@@ -65,31 +85,33 @@ def get_crimes():
                 create_query = {
                     "query": f"CREATE EDGE COLLECTION {collection_name}"
                 }
-            x.db(create_query)
+            x.db(create_query)  # Execute the query to create the collection
 
     # Ensure the required collections exist
     ensure_collection_exists("crimes")
     ensure_collection_exists("criminals")
     ensure_collection_exists("associates")
     ensure_collection_exists("relationships", "edge")
+
     # Check token validity
     if check_token(username, token) == 200:
+        # Fetch crimes data from an external source
         crimes_response = requests.get('https://abdulhamidsa.pythonanywhere.com/crimes')
         if crimes_response.status_code == 200:
             # Extract JSON data from the response
             crimes_data = crimes_response.json()
-            criminals_data = []
-            associates_data = []
-            edges_data = []
+            criminals_data = []  # List to store criminals data
+            associates_data = []  # List to store associates data
+            # edges_data = []  # List to store edge data (if needed)
 
             if crimes_data:
                 for crime in crimes_data:
-                    # Check for a criminal and add to criminals_data if exists
+                    # Add criminal data if it exists
                     if crime['criminal']:
                         crime['criminal']['type'] = 'criminal'
                         crime['criminal']['crime_type'] = crime['crime_type']  # Add the crime type to the criminal
                         criminals_data.append(crime['criminal'])
-                    # Check for suspects and add to criminals_data if exist
+                    # Add associates data if it exists
                     if crime.get('associates'):
                         for associate in crime['associates']:
                             associates_data.append(associate)
@@ -102,7 +124,7 @@ def get_crimes():
                             "crime": crime
                         }
                     }
-                    res = x.db(query)
+                    res = x.db(query)  # Execute the query to insert the crime
                 # Insert the extracted criminals into the criminals collection
                 for criminal in criminals_data:
                     query = {
@@ -113,8 +135,8 @@ def get_crimes():
                             "criminal": criminal
                         }
                     }
-                    res = x.db(query)
-                    
+                    res = x.db(query)  # Execute the query to insert the criminal
+                # Insert the extracted associates into the associates collection
                 for associate in associates_data:
                     query = {
                         "query": """
@@ -124,15 +146,21 @@ def get_crimes():
                             "associate": associate
                         }
                     }
-                    res = x.db(query)
+                    res = x.db(query)  # Execute the query to insert the associate
             return "Crimes, criminals, associates, and relationships data fetched and saved to the database"
         else:
+            # Return an error message if the crime data fetch fails
             response.status = crimes_response.status_code
             return json.dumps({"error": "Failed to fetch crime data."})
     else:
+        # Return an error message if the token is invalid
         return json.dumps({"error": "Token is invalid."})
+    
+##############################
+
 @get('/getass/<criminal_id>')
 def get_potential_suspects(criminal_id):
+    # Query to find potential suspects related to a criminal
     query = f"""
         LET criminal_custom_id = "{criminal_id}"
         FOR criminal IN criminals
@@ -144,86 +172,12 @@ def get_potential_suspects(criminal_id):
     payload = {
         "query": query
     }
-    response = x.db(payload)
+    response = x.db(payload)  # Execute the query
     if not response.get("error"):
-        return response
+        return response  # Return the response if the query is successful
     else:
+        # Raise an exception if the query fails
         raise Exception(f"Query failed with error message: {response.get('errorMessage')}")
+    
 
 ##############################
-# @get("/get-crimes")
-# def _():
-#   # Make a GET request to fetch data from the external API
-#   response = requests.get("https://abdulhamidsa.pythonanywhere.com/crimes")
-  
-#   # Check if the request was successful (status code 200)
-#   if response.status_code == 200:
-#     # Extract and log the JSON data
-#     crimes_data = response.json()
-#     ic(crimes_data)
-    
-#     # Return a success message
-#     return "JSON data fetched and logged in the console"
-#   else:
-#     # Log an error if the request was not successful
-#     ic("Error fetching JSON data. Status code:", response.status_code)
-#     return "Error fetching JSON data"
-
-
-  # Extract the suspects from the crime
-  # The crime will be the same without suspect
- 
-  # suspects = crime["suspects"]
-  # ic("#"*30)
-  # ic(suspects)
- 
- 
-  # Save the crime to the crimes collection, make sure
-  # that you get back the crime's id: Eg: crimes/4565656
- 
- 
-  # query = {
-  #   "query": """
-  #     INSERT @crime INTO crimes RETURN NEW
-  #   """,
-  #   "bindVars": {
-  #     "crime": crime
-  #   }
-  # }
-  # res = x.db(query)
-  # ic(res)
- 
-  # # Get the id of the crime
-  # crime_id = res["result"][0]["_id"]
-  # ic(crime_id)
-  # # res->result->0->_id
-  # # return "crimes saved in arangodb"
- 
- 
-  # query = {
-  #   "query": """
-  #     INSERT @suspect INTO suspects RETURN NEW
-  #   """,
-  #   "bindVars": {
-  #     "suspect": suspects[0]
-  #   }
-  # }
-  # res = x.db(query)
-  # suspects_id = res["result"][0]["_id"]
-  # ic(suspects_id)
- 
-  # # Gold Challenge
-  # # Insert the crime and the suspect in the edge collection
- 
-  # doc = {"_from":crime_id, "_to":suspects_id}
-  # query = {
-  #   "query": """
-  #     INSERT @doc INTO crimes_commited_by_suspects RETURN NEW
-  #   """,
-  #   "bindVars": {
-  #     "doc": doc
-  #   }
-  # }
-  # x.db(query)
- 
-  # return "crimes and suspects saved in arangodb"
