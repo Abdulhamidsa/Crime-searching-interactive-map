@@ -1,10 +1,37 @@
 import { useState } from "react";
-import { Button, Drawer, HStack, DrawerOverlay, DrawerFooter, DrawerContent, DrawerCloseButton, DrawerHeader, DrawerBody, useDisclosure, VStack, Checkbox, CheckboxGroup, Menu, MenuButton, MenuItem, MenuList, Icon, Box, Text, Divider } from "@chakra-ui/react";
+import {
+  Button,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  Drawer,
+  SliderThumb,
+  HStack,
+  DrawerOverlay,
+  DrawerFooter,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
+  useDisclosure,
+  VStack,
+  Checkbox,
+  CheckboxGroup,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Icon,
+  Box,
+  Text,
+  Divider,
+  Select,
+} from "@chakra-ui/react";
 import MapGL from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { MdFilterList, MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
 import styles from "@/styles/Home.module.css";
-import { Marker, Source, Layer } from "react-map-gl";
+import { Marker, Popup, Source, Layer } from "react-map-gl";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
 
@@ -42,13 +69,16 @@ function HomePage({ data }) {
   const { isOpen: isFilterOpen, onOpen: onFilterOpen, onClose: onFilterClose } = useDisclosure();
   const [suspects, setSuspects] = useState(null);
   const [selectedGender, setSelectedGender] = useState([]);
+  const [selectedAge, setSelectedAge] = useState("");
   const [key, setKey] = useState(0);
 
   console.log(suspects);
   const filteredCrimes = data.filter((crime) => {
-    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
-  });
+    const age = crime.criminal.age;
+    const [minAge, maxAge] = selectedAge.split("-").map(Number);
 
+    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender)) && (selectedAge === "" || (age >= minAge && age < maxAge));
+  });
   const fetchSuspects = async (crime_id) => {
     try {
       const response = await fetch(`/api/getPotentialSuspects?criminal_id=${crime_id}`);
@@ -88,20 +118,17 @@ function HomePage({ data }) {
     setSuspects(null);
     onOpen();
   };
-
   const getColorFromSeverity = (severity) => {
     const colorScale = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
     const index = Math.min(severity, colorScale.length) - 1;
     return colorScale[index];
   };
-
   const resetFilters = () => {
     setSelectedType("");
     setSelectedSeverity("");
     setSelectedGender([]);
     setKey((prevKey) => prevKey + 1);
   };
-
   return (
     <>
       <Box className={styles.main_container}>
@@ -127,17 +154,17 @@ function HomePage({ data }) {
                 </Button>
               )}
             </Box>
-
-            <Drawer isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
+            <Drawer size="xs" isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
               <DrawerOverlay>
                 <DrawerContent>
                   <DrawerCloseButton />
                   <DrawerHeader>Filter Options</DrawerHeader>
-
                   <DrawerBody>
-                    <VStack flex="flex-start" justify="start">
+                    <VStack flex="flex-start" align="align-items" justify="start">
                       <Menu>
-                        <MenuButton as={Button}> {`Filter by: ${selectedType || "All"}`}</MenuButton>
+                        <MenuButton textAlign="left" as={Button}>
+                          {`Filter by crime type: ${selectedType || "All"}`}
+                        </MenuButton>
                         <MenuList>
                           <MenuItem onClick={() => setSelectedType("")}>
                             <Icon as={MdOutlineRobbery} mr={2} />
@@ -162,7 +189,28 @@ function HomePage({ data }) {
                         </MenuList>
                       </Menu>
                       <Menu>
-                        <MenuButton as={Button}> {`Filter by severity: ${selectedSeverity || "All"}`}</MenuButton>
+                        <MenuButton textAlign="left" as={Button}>
+                          {`Filter by age: ${selectedAge || "All"}`}
+                        </MenuButton>
+                        <MenuList>
+                          <MenuItem value="" onClick={() => setSelectedAge("")}>
+                            All
+                          </MenuItem>
+                          <MenuItem value="20-30" onClick={() => setSelectedAge("20-30")}>
+                            20-30
+                          </MenuItem>
+                          <MenuItem value="30-40" onClick={() => setSelectedAge("30-40")}>
+                            30-40
+                          </MenuItem>
+                          <MenuItem value="40-50" onClick={() => setSelectedAge("40-50")}>
+                            40-50
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                      <Menu>
+                        <MenuButton textAlign="left" as={Button}>
+                          {`Filter by severity: ${selectedSeverity || "All"}`}
+                        </MenuButton>
                         <MenuList>
                           <MenuItem onClick={() => setSelectedSeverity("")}>All</MenuItem>
                           <MenuItem onClick={() => setSelectedSeverity(1)}>1</MenuItem>
@@ -240,6 +288,17 @@ function HomePage({ data }) {
                           <circle cx="12" cy="12" r="10" />
                         </svg>
                       </Box>
+                      <Popup latitude={parseFloat(suspect.latitude)} longitude={parseFloat(suspect.longitude)} closeButton={false} closeOnClick={false}>
+                        <Box>
+                          <Text>
+                            {suspect.first_name}: {suspect.last_name}
+                          </Text>
+                          <Text>{suspect.name}</Text>
+                          <Text>Gender: {suspect.gender}</Text>
+                          <Text>Age: {suspect.age}</Text>
+                          <Text>Crime history: {suspect.criminal_history[0]}</Text>
+                        </Box>
+                      </Popup>
                     </Marker>
                   ))}
               </>
@@ -298,5 +357,4 @@ function HomePage({ data }) {
     </>
   );
 }
-
 export default HomePage;
