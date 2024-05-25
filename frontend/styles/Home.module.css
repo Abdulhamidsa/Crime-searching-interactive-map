@@ -31,7 +31,21 @@
   /* width: 10px !important; */
   top: 0;
 }
-.footer {
-  position: absolute;
-  bottom: 0;
+.filter_button {
+  background-color: #212121 !important;
+  color: #fff !important;
+  border: 1px solid #fff !important;
+}
+.filter_button_drop {
+  background-color: #00000033 !important;
+  color: #fff !important;
+  /* border: 0.5px solid #ffffff6b !important; */
+}
+.icons_map {
+  color: #fff !important;
+  font-size: 30px !important;
+  background-color: #212121 !important;
+  padding: 3px !important;
+  border: 1px solid #ffffff6b !important;
+  cursor: pointer;
 }

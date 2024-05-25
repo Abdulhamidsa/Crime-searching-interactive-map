@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ChevronDownIcon } from "@chakra-ui/icons";
+
 import {
   Button,
   Slider,
@@ -29,6 +31,7 @@ import {
 } from "@chakra-ui/react";
 import MapGL from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+
 import { MdFilterList, MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
 import styles from "@/styles/Home.module.css";
 import { Marker, Popup, Source, Layer } from "react-map-gl";
@@ -57,7 +60,7 @@ export async function getServerSideProps() {
     };
   }
 }
-
+import * as FaIcons from "react-icons/fa";
 function HomePage({ data }) {
   const mapboxToken = "pk.eyJ1IjoiYWJvb29kc2EiLCJhIjoiY2xtYXcwcDZtMHp3ODNjcXE0YWY4dmNrMyJ9.0sDQp8tgynWP70CQOLZkrw";
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -72,7 +75,7 @@ function HomePage({ data }) {
   const [selectedAge, setSelectedAge] = useState("");
   const [key, setKey] = useState(0);
 
-  console.log(suspects);
+  // console.log(suspects);
   const filteredCrimes = data.filter((crime) => {
     const age = crime.criminal.age;
     const [minAge, maxAge] = selectedAge.split("-").map(Number);
@@ -156,78 +159,94 @@ function HomePage({ data }) {
             </Box>
             <Drawer size="xs" isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
               <DrawerOverlay>
-                <DrawerContent>
+                <DrawerContent className={styles.drawer}>
                   <DrawerCloseButton />
                   <DrawerHeader>Filter Options</DrawerHeader>
                   <DrawerBody>
                     <VStack flex="flex-start" align="align-items" justify="start">
                       <Menu>
-                        <MenuButton textAlign="left" as={Button}>
-                          {`Filter by crime type: ${selectedType || "All"}`}
+                        <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
+                          {`Crime type : ${selectedType || "All"}`}
                         </MenuButton>
-                        <MenuList>
-                          <MenuItem onClick={() => setSelectedType("")}>
-                            <Icon as={MdOutlineRobbery} mr={2} />
+                        <MenuList p="0" className={styles.filter_button}>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedType("")}>
                             All
                           </MenuItem>
-                          <MenuItem onClick={() => setSelectedType("Robbery")}>
-                            <Icon as={MdOutlineRobbery} mr={2} />
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedType("Robbery")}>
+                            <Icon as={FaIcons.FaUserSecret} mr={2} />
                             Robbery
                           </MenuItem>
-                          <MenuItem onClick={() => setSelectedType("Murder")}>
-                            <Icon as={MdOutlineCrime} mr={2} />
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedType("Murder")}>
+                            <Icon as={FaIcons.FaSkullCrossbones} mr={2} />
                             Murder
                           </MenuItem>
-                          <MenuItem onClick={() => setSelectedType("Cybercrime")}>
-                            <Icon as={MdOutlineComputer} mr={2} />
-                            Cybercrime
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedType("Cybercrime")}>
+                            <Icon as={FaIcons.FaLaptop} mr={2} /> Cybercrime
                           </MenuItem>
-                          <MenuItem onClick={() => setSelectedType("Sex Trafficking")}>
-                            <Icon as={MdOutlinePeopleAlt} mr={2} />
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedType("Sex Trafficking")}>
+                            <Icon as={FaIcons.FaUsers} mr={2} />
                             Sex Trafficking
                           </MenuItem>
                         </MenuList>
                       </Menu>
                       <Menu>
-                        <MenuButton textAlign="left" as={Button}>
-                          {`Filter by age: ${selectedAge || "All"}`}
+                        <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
+                          {`Age : ${selectedAge || "All"}`}
                         </MenuButton>
-                        <MenuList>
-                          <MenuItem value="" onClick={() => setSelectedAge("")}>
+                        <MenuList p="0" className={styles.filter_button}>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedAge("")}>
                             All
                           </MenuItem>
-                          <MenuItem value="20-30" onClick={() => setSelectedAge("20-30")}>
+
+                          <MenuItem p="2" className={styles.filter_button_drop} value="20-30" onClick={() => setSelectedAge("20-30")}>
                             20-30
                           </MenuItem>
-                          <MenuItem value="30-40" onClick={() => setSelectedAge("30-40")}>
+                          <MenuItem p="2" className={styles.filter_button_drop} value="30-40" onClick={() => setSelectedAge("30-40")}>
                             30-40
                           </MenuItem>
-                          <MenuItem value="40-50" onClick={() => setSelectedAge("40-50")}>
+                          <MenuItem p="2" className={styles.filter_button_drop} value="40-50" onClick={() => setSelectedAge("40-50")}>
                             40-50
                           </MenuItem>
                         </MenuList>
                       </Menu>
                       <Menu>
-                        <MenuButton textAlign="left" as={Button}>
-                          {`Filter by severity: ${selectedSeverity || "All"}`}
+                        <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
+                          {`Severity : ${selectedSeverity || "All"}`}
                         </MenuButton>
-                        <MenuList>
-                          <MenuItem onClick={() => setSelectedSeverity("")}>All</MenuItem>
-                          <MenuItem onClick={() => setSelectedSeverity(1)}>1</MenuItem>
-                          <MenuItem onClick={() => setSelectedSeverity(2)}>2</MenuItem>
-                          <MenuItem onClick={() => setSelectedSeverity(3)}>3</MenuItem>
-                          <MenuItem onClick={() => setSelectedSeverity(4)}>4</MenuItem>
-                          <MenuItem onClick={() => setSelectedSeverity(5)}>5</MenuItem>
+                        <MenuList p="0" className={styles.filter_button}>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity("")}>
+                            All
+                          </MenuItem>
+
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(1)}>
+                            1
+                          </MenuItem>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(2)}>
+                            2
+                          </MenuItem>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(3)}>
+                            3
+                          </MenuItem>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(4)}>
+                            4
+                          </MenuItem>
+                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(5)}>
+                            5
+                          </MenuItem>
                         </MenuList>
                       </Menu>
                       <CheckboxGroup key={key} value={selectedGender} onChange={setSelectedGender}>
-                        <Checkbox value="Male">Male</Checkbox>
-                        <Checkbox value="Female">Female</Checkbox>
+                        <Checkbox value="Male" colorScheme="#fff">
+                          Male
+                        </Checkbox>
+                        <Checkbox value="Female" colorScheme="#fff">
+                          Female
+                        </Checkbox>
                       </CheckboxGroup>
                     </VStack>
                   </DrawerBody>
                   <DrawerFooter>
-                    <Button colorScheme="blue" onClick={resetFilters}>
+                    <Button mr="auto" colorScheme="blue" onClick={resetFilters}>
                       Reset Filters
                     </Button>
                   </DrawerFooter>
@@ -273,9 +292,10 @@ function HomePage({ data }) {
                 {(selectedCrime ? [selectedCrime] : filteredCrimes).map((crime) => (
                   <Marker key={uuidv4()} latitude={parseFloat(crime.latitude)} longitude={parseFloat(crime.longitude)}>
                     <Box onClick={() => handleOpen(crime)}>
-                      <svg height="20" viewBox="0 0 24 24" fill={getColorFromSeverity(crime.severity)} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
+                      {crime.crime_type === "Robbery" && <Icon className={styles.icons_map} as={FaIcons.FaUserSecret} />}
+                      {crime.crime_type === "Murder" && <Icon className={styles.icons_map} as={FaIcons.FaSkullCrossbones} />}
+                      {crime.crime_type === "Cybercrime" && <Icon className={styles.icons_map} as={FaIcons.FaLaptop} />}
+                      {crime.crime_type === "Sex Trafficking" && <Icon className={styles.icons_map} as={FaIcons.FaUsers} />}
                     </Box>
                   </Marker>
                 ))}

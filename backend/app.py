@@ -49,9 +49,9 @@ def _():
     res = x.db(query)  # Execute the query using the database client
     if res["error"] == False:
         # Set response headers to allow cross-origin requests
-        response.headers["Access-Control-Allow-Origin"] = "*" 
-        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"  
-        response.headers["Access-Control-Allow-Headers"] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"  
+        # response.headers["Access-Control-Allow-Origin"] = "*" 
+        # response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"  
+        # response.headers["Access-Control-Allow-Headers"] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"  
         response.content_type = "application/json"
         # Return the query results as JSON
         return json.dumps(res["result"])
@@ -158,7 +158,7 @@ def get_crimes():
     
 ##############################
 
-@get('/getass/<criminal_id>')
+@get('/get-potential-suspects/<criminal_id>')
 def get_potential_suspects(criminal_id):
     # Query to find potential suspects related to a criminal
     query = f"""
