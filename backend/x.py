@@ -14,8 +14,6 @@ def db(query,type="cursor"):
     try:
         url = f"http://arangodb:8529/_api/{type}"  # URL of the ArangoDB cursor API endpoint.
         res = requests.post(url, json=query)  # Sends a POST request to the URL with the query as a JSON payload.
-        # ic(res)  # Debugging: prints the response object.
-        # ic(res.text)  # Debugging: prints the response text.
         return res.json()  # Returns the response in JSON format.
     except Exception as ex:  # Catches any exception that occurs within the try block.
         print("#" * 50)  # Prints a line of hashes for visual separation in the output.

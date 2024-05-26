@@ -59,6 +59,7 @@ export async function getServerSideProps() {
   }
 }
 import * as FaIcons from "react-icons/fa";
+
 function HomePage({ data }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCrime, setSelectedCrime] = useState(null);
@@ -118,6 +119,7 @@ function HomePage({ data }) {
     <>
       <Box className={styles.main_container}>
         <Box className={styles.map_container}>
+          {/* MAP CONFIGURATION */}
           <MapGL
             key={`${location.latitude},${location.longitude}`}
             initialViewState={{
@@ -251,7 +253,7 @@ function HomePage({ data }) {
                     />
                   </Source>
                 )}
-
+                {/* CRIMES MARKER ON MAP */}
                 {(selectedCrime ? [selectedCrime] : filteredCrimes).map((crime) => (
                   <Marker key={uuidv4()} latitude={parseFloat(crime.crime_location.latitude)} longitude={parseFloat(crime.crime_location.longitude)}>
                     <Box onClick={!suspects ? () => handleOpen(crime) : undefined}>
@@ -262,6 +264,7 @@ function HomePage({ data }) {
                     </Box>
                   </Marker>
                 ))}
+                {/* SHOW POTENTIAL SUSPECTS WHEN CLICKING THE BUTTON */}
                 {showSuspects &&
                   suspects &&
                   suspects.slice(0, 4).map((suspect, index) => (
@@ -286,7 +289,7 @@ function HomePage({ data }) {
             )}
           </MapGL>
         </Box>
-
+        {/* DRAWER FOR THE CRIME DETAILS */}
         <Drawer size="md" isOpen={isOpen} onClose={handleClose} placement="right">
           <DrawerOverlay>
             <DrawerContent className={styles.drawer}>
