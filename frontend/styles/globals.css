@@ -65,7 +65,18 @@ a {
   color: inherit;
   text-decoration: none;
 }
-
+img {
+  margin: auto !important;
+}
+button {
+  background-color: #212121 !important;
+  color: #fff !important;
+  border: 1px outset #fff !important;
+}
+button:hover {
+  background-color: #000000 !important;
+  border: 1px inset #fff !important;
+}
 /* @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

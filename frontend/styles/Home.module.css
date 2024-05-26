@@ -15,12 +15,13 @@
   left: 90%;
 }
 .criminal_image {
-  width: 85%;
-  margin: auto;
-  height: auto;
+  /* width: 80%; */
+  margin: auto !important;
+  height: auto !important;
   /* height: 50%; */
   padding: 1rem 1rem 0.5rem 1rem;
 }
+
 .drawer {
   background-color: #212121 !important;
   color: #fff !important;
@@ -48,4 +49,8 @@
   padding: 3px !important;
   border: 1px solid #ffffff6b !important;
   cursor: pointer;
+}
+.update_data_button {
+  position: absolute;
+  top: 50px;
 }

@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
-
 import {
+  Table,
+  Thead,
+  Tr,
+  Th,
   Button,
   Slider,
   SliderTrack,
   SliderFilledTrack,
   Drawer,
+  Tbody,
+  Td,
   SliderThumb,
   HStack,
   DrawerOverlay,
@@ -31,7 +36,6 @@ import {
 } from "@chakra-ui/react";
 import MapGL from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-
 import { MdFilterList, MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
 import styles from "@/styles/Home.module.css";
 import { Marker, Popup, Source, Layer } from "react-map-gl";
@@ -62,7 +66,7 @@ export async function getServerSideProps() {
 }
 import * as FaIcons from "react-icons/fa";
 function HomePage({ data }) {
-  const mapboxToken = "pk.eyJ1IjoiYWJvb29kc2EiLCJhIjoiY2xtYXcwcDZtMHp3ODNjcXE0YWY4dmNrMyJ9.0sDQp8tgynWP70CQOLZkrw";
+  console.log(data);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCrime, setSelectedCrime] = useState(null);
   const [location, setLocation] = useState({ latitude: 55.6761, longitude: 12.5683, zoom: 10 });
@@ -72,15 +76,13 @@ function HomePage({ data }) {
   const { isOpen: isFilterOpen, onOpen: onFilterOpen, onClose: onFilterClose } = useDisclosure();
   const [suspects, setSuspects] = useState(null);
   const [selectedGender, setSelectedGender] = useState([]);
-  const [selectedAge, setSelectedAge] = useState("");
+  // const [selectedAge, setSelectedAge] = useState("");
   const [key, setKey] = useState(0);
-
-  // console.log(suspects);
   const filteredCrimes = data.filter((crime) => {
-    const age = crime.criminal.age;
-    const [minAge, maxAge] = selectedAge.split("-").map(Number);
+    // const age = crime.criminal.age;
+    // const [minAge, maxAge] = selectedAge.split("-").map(Number);
 
-    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender)) && (selectedAge === "" || (age >= minAge && age < maxAge));
+    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.crime_perpetrator.gender));
   });
   const fetchSuspects = async (crime_id) => {
     try {
@@ -121,17 +123,19 @@ function HomePage({ data }) {
     setSuspects(null);
     onOpen();
   };
-  const getColorFromSeverity = (severity) => {
-    const colorScale = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
-    const index = Math.min(severity, colorScale.length) - 1;
-    return colorScale[index];
-  };
+  // const getColorFromSeverity = (severity) => {
+  //   const colorScale = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
+  //   const index = Math.min(severity, colorScale.length) - 1;
+  //   return colorScale[index];
+  // };
   const resetFilters = () => {
     setSelectedType("");
     setSelectedSeverity("");
     setSelectedGender([]);
     setKey((prevKey) => prevKey + 1);
   };
+  console.log(selectedCrime);
+  console.log(suspects);
   return (
     <>
       <Box className={styles.main_container}>
@@ -145,8 +149,8 @@ function HomePage({ data }) {
               minZoom: 6,
               maxZoom: 17,
             }}
-            mapStyle="mapbox://styles/mapbox/satellite-v9"
-            mapboxAccessToken={mapboxToken}
+            mapStyle="mapbox://styles/mapbox/satellite-streets-v9"
+            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
             keyboard={true}
             interactive={true}
           >
@@ -157,6 +161,7 @@ function HomePage({ data }) {
                 </Button>
               )}
             </Box>
+
             <Drawer size="xs" isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
               <DrawerOverlay>
                 <DrawerContent className={styles.drawer}>
@@ -189,7 +194,7 @@ function HomePage({ data }) {
                           </MenuItem>
                         </MenuList>
                       </Menu>
-                      <Menu>
+                      {/* <Menu>
                         <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
                           {`Age : ${selectedAge || "All"}`}
                         </MenuButton>
@@ -208,7 +213,7 @@ function HomePage({ data }) {
                             40-50
                           </MenuItem>
                         </MenuList>
-                      </Menu>
+                      </Menu> */}
                       <Menu>
                         <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
                           {`Severity : ${selectedSeverity || "All"}`}
@@ -269,7 +274,7 @@ function HomePage({ data }) {
                       properties: {},
                       geometry: {
                         type: "LineString",
-                        coordinates: [[parseFloat(selectedCrime.longitude), parseFloat(selectedCrime.latitude)], ...suspects.map((suspect) => [parseFloat(suspect.longitude), parseFloat(suspect.latitude)])],
+                        coordinates: [[parseFloat(selectedCrime.crime_location.longitude), parseFloat(selectedCrime.crime_location.latitude)], ...suspects.map((suspect) => [parseFloat(suspect.location.longitude), parseFloat(suspect.location.latitude)])],
                       },
                     }}
                   >
@@ -290,8 +295,8 @@ function HomePage({ data }) {
                 )}
 
                 {(selectedCrime ? [selectedCrime] : filteredCrimes).map((crime) => (
-                  <Marker key={uuidv4()} latitude={parseFloat(crime.latitude)} longitude={parseFloat(crime.longitude)}>
-                    <Box onClick={() => handleOpen(crime)}>
+                  <Marker key={uuidv4()} latitude={parseFloat(crime.crime_location.latitude)} longitude={parseFloat(crime.crime_location.longitude)}>
+                    <Box onClick={!suspects ? () => handleOpen(crime) : undefined}>
                       {crime.crime_type === "Robbery" && <Icon className={styles.icons_map} as={FaIcons.FaUserSecret} />}
                       {crime.crime_type === "Murder" && <Icon className={styles.icons_map} as={FaIcons.FaSkullCrossbones} />}
                       {crime.crime_type === "Cybercrime" && <Icon className={styles.icons_map} as={FaIcons.FaLaptop} />}
@@ -302,21 +307,25 @@ function HomePage({ data }) {
                 {showSuspects &&
                   suspects &&
                   suspects.map((suspect, index) => (
-                    <Marker key={index} latitude={parseFloat(suspect.latitude)} longitude={parseFloat(suspect.longitude)}>
+                    <Marker key={index} latitude={parseFloat(suspect.location.latitude)} longitude={parseFloat(suspect.location.longitude)}>
                       <Box>
-                        <svg height="20" viewBox="0 0 24 24" fill="blue" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
+                        <Icon className={styles.icons_map} as={FaIcons.FaMapMarkerAlt} />
                       </Box>
-                      <Popup latitude={parseFloat(suspect.latitude)} longitude={parseFloat(suspect.longitude)} closeButton={false} closeOnClick={false}>
+                      <Popup
+                        latitude={parseFloat(suspect.location.latitude)}
+                        longitude={parseFloat(suspect.location.longitude)}
+                        closeButton={false}
+                        closeOnClick={false}
+                        offsetTop={-10} // Adjust this value as needed
+                      >
                         <Box>
                           <Text>
-                            {suspect.first_name}: {suspect.last_name}
+                            Name: {suspect.first_name} {suspect.last_name}
                           </Text>
-                          <Text>{suspect.name}</Text>
                           <Text>Gender: {suspect.gender}</Text>
                           <Text>Age: {suspect.age}</Text>
-                          <Text>Crime history: {suspect.criminal_history[0]}</Text>
+                          <Text>Crime history: {suspect.criminal_history}</Text>
+                          {selectedCrime && selectedCrime.crime_perpetrator.last_name === suspect.last_name && <Text>Potential Family Member.</Text>}
                         </Box>
                       </Popup>
                     </Marker>
@@ -336,23 +345,50 @@ function HomePage({ data }) {
               <DrawerBody>
                 {selectedCrime && (
                   <>
-                    <Box borderWidth="1px" borderRadius="lg" overflow="hidden" p={4} mb={5}>
-                      <Image className={styles.criminal_image} width={200} height={200} src={selectedCrime.criminal.avatar} alt={selectedCrime.criminal.first_name} />
+                    <Box m="auto" overflow="hidden" p={0} mb={5}>
+                      <Image className={styles.crime_perpetrator} width={300} height={300} src={selectedCrime.crime_perpetrator.avatar} alt={selectedCrime.crime_perpetrator.first_name} />
                       <Text fontSize="2.5rem" textAlign="center" fontWeight="">
-                        {selectedCrime.criminal.first_name} {selectedCrime.criminal.last_name}
+                        {selectedCrime.crime_perpetrator.first_name} {selectedCrime.crime_perpetrator.last_name}
                       </Text>
-                      <Divider my={4} />
                       <VStack align="start" spacing={2} mt={5}>
-                        <Text fontWeight="">Crime ID: {selectedCrime.crime_id}</Text>
-                        <Text fontWeight="">Crime Type: {selectedCrime.crime_type}</Text>
-                        <Text fontWeight="">Description: {selectedCrime.description}</Text>
+                        <Table variant="simple">
+                          <Thead>
+                            <Tr>
+                              <Th>Property</Th>
+                              <Th>Value</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            <Tr>
+                              <Td>Crime ID</Td>
+                              <Td>{selectedCrime.crime_id}</Td>
+                            </Tr>
+                            <Tr>
+                              <Td>Crime Type</Td>
+                              <Td>{selectedCrime.crime_type}</Td>
+                            </Tr>
+                            <Tr>
+                              <Td>Description</Td>
+                              <Td>{selectedCrime.crime_description}</Td>
+                            </Tr>
+                            <Tr>
+                              <Td>Reported time</Td>
+                              <Td>{selectedCrime.crime_report_time}</Td>
+                            </Tr>
+                            <Tr>
+                              <Td>Severity</Td>
+                              <Td>{selectedCrime.crime_severity}</Td>
+                            </Tr>
+                          </Tbody>
+                        </Table>
+                        {/* <Text fontWeight="">Tottal related suspects: {selectedCrime.crime_location.location_name}</Text> */}
                         <Text mt="4" fontSize="1.25rem" fontWeight="bold">
                           Victims:
                         </Text>
-                        <HStack w="full" justify="flex-start" align="center" spacing={5}>
-                          {selectedCrime.victims.map((victim, index) => (
+                        <HStack w="full" justify="flex-start" align="center" spacing={5} mb={8}>
+                          {selectedCrime.crime_victims.map((victim, index) => (
                             <Box key={index}>
-                              <Image m="auto" width={120} height={120} src={victim.avatar} alt={victim.first_name} />
+                              <Image m="auto" width={100} height={100} src={victim.avatar} alt={victim.first_name} />
                               <Box textAlign="center">
                                 <Text>
                                   {victim.first_name} {victim.last_name}
@@ -361,9 +397,9 @@ function HomePage({ data }) {
                             </Box>
                           ))}
                         </HStack>
-                        <Divider my={4} />
-                        <Button alignSelf="flex-start" onClick={() => handleSuspects(selectedCrime.criminal.id)}>
-                          Display Suspected Gang Members
+                        {/* <Divider my={4} /> */}
+                        <Button alignSelf="flex-start" onClick={() => handleSuspects(selectedCrime.crime_perpetrator.id)}>
+                          Potential Related Suspects
                         </Button>
                       </VStack>
                     </Box>
@@ -374,6 +410,7 @@ function HomePage({ data }) {
           </DrawerOverlay>
         </Drawer>
       </Box>
+      <Button className={styles.update_data_button}>CHECK FOR UPDATED DATA</Button>
     </>
   );
 }
