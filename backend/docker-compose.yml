@@ -24,6 +24,5 @@ services:
       - ./arangodb:/var/lib/arangodb3
     networks:
       - bottle_arangodb_network
-
 networks:
   bottle_arangodb_network:
