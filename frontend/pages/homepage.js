@@ -82,7 +82,7 @@ function HomePage({ data }) {
     // const age = crime.criminal.age;
     // const [minAge, maxAge] = selectedAge.split("-").map(Number);
 
-    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.crime_perpetrator.gender));
+    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
   });
   const fetchSuspects = async (crime_id) => {
     try {
@@ -306,7 +306,7 @@ function HomePage({ data }) {
                 ))}
                 {showSuspects &&
                   suspects &&
-                  suspects.map((suspect, index) => (
+                  suspects.slice(0, 4).map((suspect, index) => (
                     <Marker key={index} latitude={parseFloat(suspect.location.latitude)} longitude={parseFloat(suspect.location.longitude)}>
                       <Box>
                         <Icon className={styles.icons_map} as={FaIcons.FaMapMarkerAlt} />
@@ -325,7 +325,7 @@ function HomePage({ data }) {
                           <Text>Gender: {suspect.gender}</Text>
                           <Text>Age: {suspect.age}</Text>
                           <Text>Crime history: {suspect.criminal_history}</Text>
-                          {selectedCrime && selectedCrime.crime_perpetrator.last_name === suspect.last_name && <Text>Potential Family Member.</Text>}
+                          {selectedCrime && selectedCrime.criminal.last_name === suspect.last_name && <Text>Potential Family Member.</Text>}
                         </Box>
                       </Popup>
                     </Marker>
@@ -346,9 +346,9 @@ function HomePage({ data }) {
                 {selectedCrime && (
                   <>
                     <Box m="auto" overflow="hidden" p={0} mb={5}>
-                      <Image className={styles.crime_perpetrator} width={300} height={300} src={selectedCrime.crime_perpetrator.avatar} alt={selectedCrime.crime_perpetrator.first_name} />
+                      <Image className={styles.criminal} width={300} height={300} src={selectedCrime.criminal.avatar} alt={selectedCrime.criminal.first_name} />
                       <Text fontSize="2.5rem" textAlign="center" fontWeight="">
-                        {selectedCrime.crime_perpetrator.first_name} {selectedCrime.crime_perpetrator.last_name}
+                        {selectedCrime.criminal.first_name} {selectedCrime.criminal.last_name}
                       </Text>
                       <VStack align="start" spacing={2} mt={5}>
                         <Table variant="simple">
@@ -398,7 +398,7 @@ function HomePage({ data }) {
                           ))}
                         </HStack>
                         {/* <Divider my={4} /> */}
-                        <Button alignSelf="flex-start" onClick={() => handleSuspects(selectedCrime.crime_perpetrator.id)}>
+                        <Button alignSelf="flex-start" onClick={() => handleSuspects(selectedCrime.criminal.id)}>
                           Potential Related Suspects
                         </Button>
                       </VStack>

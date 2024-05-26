@@ -9,10 +9,10 @@ def disable_cache():
     response.add_header("Expires", 0)  # Sets the expiration date to '0' to ensure the response is considered stale immediately.
 
 ##############################
-def db(query):
+def db(query,type="cursor"):
     # This function sends a query to the ArangoDB server and returns the JSON response.
     try:
-        url = "http://arangodb:8529/_api/cursor"  # URL of the ArangoDB cursor API endpoint.
+        url = f"http://arangodb:8529/_api/{type}"  # URL of the ArangoDB cursor API endpoint.
         res = requests.post(url, json=query)  # Sends a POST request to the URL with the query as a JSON payload.
         # ic(res)  # Debugging: prints the response object.
         # ic(res.text)  # Debugging: prints the response text.
