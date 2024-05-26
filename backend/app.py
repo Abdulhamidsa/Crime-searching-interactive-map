@@ -40,24 +40,16 @@ def _():
     # Query to fetch all crimes from the 'crimes' collection
     query = {
         "query": """
-            FOR crime IN crimes
-    LET criminal = (
-        FOR edge IN crime_criminal_edges
-            FILTER edge._from == CONCAT('crimes/', crime._key)
-            FOR criminal IN criminals
-                FILTER criminal._key == PARSE_IDENTIFIER(edge._to).key
-                RETURN criminal
-    )
-    RETURN MERGE(crime, { criminal: FIRST(criminal) })
-
+            FOR edge IN crime_criminal_edges
+                LET crime_id = edge._from
+                LET criminal_id = edge._to
+                LET crime = DOCUMENT('crimes', crime_id)
+                LET criminal = DOCUMENT('criminals', criminal_id)
+                    RETURN MERGE(crime, { criminal: criminal })
         """
     }
     res = x.db(query)  # Execute the query using the database client
     if res["error"] == False:
-        # Set response headers to allow cross-origin requests
-        # response.headers["Access-Control-Allow-Origin"] = "*" 
-        # response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"  
-        # response.headers["Access-Control-Allow-Headers"] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"  
         response.content_type = "application/json"
         # Return the query results as JSON
         return json.dumps(res["result"])
@@ -73,7 +65,6 @@ def transactionQuery(crimes, criminals, associates):
     for i, crime in enumerate(crimes):
             # Convert victims to a JSON-compatible string
             victims = json.dumps(crime.get('crime_victims', []))
-
             crimesInsert += f'''
             var crime{i} = db.crimes.firstExample({{"_key": "{crime['_key']}"}})
             if (crime{i} == null) {{
@@ -90,8 +81,6 @@ def transactionQuery(crimes, criminals, associates):
                 }})
             }}
             '''
-
-
     criminalsInsert = ""
     for i, criminal in enumerate(criminals):
         criminalsInsert += f'''
@@ -112,7 +101,6 @@ def transactionQuery(crimes, criminals, associates):
             }})
         }}
         '''
-
     associatesInsert = ""
     for i, associate in enumerate(associates):
         associatesInsert += f'''
@@ -131,7 +119,6 @@ def transactionQuery(crimes, criminals, associates):
             }})
         }}
         '''
-
     # Insert edges to connect crimes and criminals based on shared crime_id, with type 'perpetrator'
     edgesInsertCriminals = ""
     for i, criminal in enumerate(criminals):
@@ -145,9 +132,6 @@ def transactionQuery(crimes, criminals, associates):
             }})
         }}
         '''
-
-
-
     edgesInsertSuspects = ""
     for criminal in criminals:
         for associate in associates:
@@ -198,7 +182,6 @@ def get_crimes():
                 for crime in crimes_data:
                     # Extract victims data
                     victims = crime.get('crime_victims', [])
-                    
                     # Append crime details to the crimes_list
                     crimes_list.append({
                         "_key": crime['crime_id'],
@@ -211,8 +194,6 @@ def get_crimes():
                         "crime_report_time": crime['crime_report_time'],
                         "crime_victims": victims  # Include victims' data
                     })
-
-
                     if crime['crime_perpetrator']:
                         crime['crime_perpetrator']['type'] = 'criminal'
                         crime['crime_perpetrator']['crime_type'] = crime['crime_type']  # Add the crime type to the criminal
@@ -229,7 +210,6 @@ def get_crimes():
                             "crime_type": crime['crime_type'],
                             "crime_id": crime['crime_id']
                         })
-
                     if crime.get('crime_associates'):
                         for associate in crime['crime_associates']:
                             associates_data.append({

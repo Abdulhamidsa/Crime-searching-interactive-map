@@ -76,12 +76,8 @@ function HomePage({ data }) {
   const { isOpen: isFilterOpen, onOpen: onFilterOpen, onClose: onFilterClose } = useDisclosure();
   const [suspects, setSuspects] = useState(null);
   const [selectedGender, setSelectedGender] = useState([]);
-  // const [selectedAge, setSelectedAge] = useState("");
   const [key, setKey] = useState(0);
   const filteredCrimes = data.filter((crime) => {
-    // const age = crime.criminal.age;
-    // const [minAge, maxAge] = selectedAge.split("-").map(Number);
-
     return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
   });
   const fetchSuspects = async (crime_id) => {
@@ -97,45 +93,34 @@ function HomePage({ data }) {
       console.log(error);
     }
   };
-
   const handleOpen = (crime) => {
     setSelectedCrime(crime);
     onOpen();
   };
-
   const handleClose = () => {
     setSelectedCrime(null);
     setShowSuspects(false);
     setSuspects(null);
     onClose();
   };
-
   const handleSuspects = async (crimeId) => {
     fetchSuspects(crimeId);
     setLocation({ latitude: 55.9639, longitude: 9.5018, zoom: 5 });
     setShowSuspects(true);
     onClose();
   };
-
   const handleReturnToMap = () => {
     setLocation({ latitude: 55.6761, longitude: 12.5683, zoom: 10 });
     setShowSuspects(false);
     setSuspects(null);
     onOpen();
   };
-  // const getColorFromSeverity = (severity) => {
-  //   const colorScale = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
-  //   const index = Math.min(severity, colorScale.length) - 1;
-  //   return colorScale[index];
-  // };
   const resetFilters = () => {
     setSelectedType("");
     setSelectedSeverity("");
     setSelectedGender([]);
     setKey((prevKey) => prevKey + 1);
   };
-  console.log(selectedCrime);
-  console.log(suspects);
   return (
     <>
       <Box className={styles.main_container}>
@@ -194,26 +179,6 @@ function HomePage({ data }) {
                           </MenuItem>
                         </MenuList>
                       </Menu>
-                      {/* <Menu>
-                        <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
-                          {`Age : ${selectedAge || "All"}`}
-                        </MenuButton>
-                        <MenuList p="0" className={styles.filter_button}>
-                          <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedAge("")}>
-                            All
-                          </MenuItem>
-
-                          <MenuItem p="2" className={styles.filter_button_drop} value="20-30" onClick={() => setSelectedAge("20-30")}>
-                            20-30
-                          </MenuItem>
-                          <MenuItem p="2" className={styles.filter_button_drop} value="30-40" onClick={() => setSelectedAge("30-40")}>
-                            30-40
-                          </MenuItem>
-                          <MenuItem p="2" className={styles.filter_button_drop} value="40-50" onClick={() => setSelectedAge("40-50")}>
-                            40-50
-                          </MenuItem>
-                        </MenuList>
-                      </Menu> */}
                       <Menu>
                         <MenuButton className={styles.filter_button} textAlign="left" as={Button} rightIcon={<ChevronDownIcon />}>
                           {`Severity : ${selectedSeverity || "All"}`}
