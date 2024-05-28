@@ -1,17 +1,15 @@
-from bottle import get, template, static_file, response
+from bottle import get, response
 import x  # Assuming 'x' is your database client for ArangoDB
 from icecream import ic  # For debugging output
 import requests  # To make HTTP requests
 import json  # For JSON handling
-from dotenv import load_dotenv  # To load environment variables from a .env file
-import os  # For operating system interactions
+from decouple import config
 
 ##############################
 
 # Load environment variables from a .env file
-load_dotenv('.env')
-username = os.getenv('username')
-token = os.getenv('token')
+username = config('username')
+token = config('token')
 
 ##############################
 
@@ -40,12 +38,12 @@ def _():
     # Query to fetch all crimes from the 'crimes' collection
     query = {
         "query": """
-            FOR edge IN crime_criminal_edges
+            FOR edge IN crime_criminal
                 LET crime_id = edge._from
-                LET criminal_id = edge._to
-                LET crime = DOCUMENT('crimes', crime_id)
-                LET criminal = DOCUMENT('criminals', criminal_id)
-                    RETURN MERGE(crime, { criminal: criminal })
+                    LET criminal_id = edge._to
+                        LET crime = DOCUMENT('crimes', crime_id)
+                            LET criminal = DOCUMENT('criminals', criminal_id)
+            RETURN MERGE(crime, { criminal: criminal })
         """
     }
     res = x.db(query)  # Execute the query using the database client
@@ -55,13 +53,14 @@ def _():
         return json.dumps(res["result"])
     else:
         # Print an error message if the query fails
-        print("Error fetching crimes. Error message:", res["errorMessage"])
+        ic("Error fetching crimes. Error message:", res["errorMessage"])
         return "Error fetching crimes"
 
 ##############################
 
 def transactionQuery(crimes, criminals, associates):
     crimesInsert = ""
+        ## enumerate() function is used to loop through the list of criminals
     for i, crime in enumerate(crimes):
             # Convert victims to a JSON-compatible string
             victims = json.dumps(crime.get('crime_victims', []))
@@ -82,6 +81,8 @@ def transactionQuery(crimes, criminals, associates):
             }}
             '''
     criminalsInsert = ""
+        ## enumerate() function is used to loop through the list of criminals
+
     for i, criminal in enumerate(criminals):
         criminalsInsert += f'''
         var criminal{i} = db.criminals.firstExample({{"_key": "{criminal['_key']}"}})
@@ -92,6 +93,7 @@ def transactionQuery(crimes, criminals, associates):
                 "first_name": "{criminal['first_name']}",
                 "last_name": "{criminal['last_name']}",
                 "age": {criminal['age']},
+                "gender": "{criminal['gender']}",
                 "city": "{criminal['city']}",
                 "location": {{"latitude": {criminal['location']['latitude']}, "longitude": {criminal['location']['longitude']}}},
                 "avatar": "{criminal['avatar']}",
@@ -102,6 +104,7 @@ def transactionQuery(crimes, criminals, associates):
         }}
         '''
     associatesInsert = ""
+        ## enumerate() function is used to loop through the list of criminals
     for i, associate in enumerate(associates):
         associatesInsert += f'''
         var associate{i} = db.associates.firstExample({{"_key": "{associate['_key']}"}})
@@ -121,11 +124,12 @@ def transactionQuery(crimes, criminals, associates):
         '''
     # Insert edges to connect crimes and criminals based on shared crime_id, with type 'perpetrator'
     edgesInsertCriminals = ""
+    ## enumerate() function is used to loop through the list of criminals
     for i, criminal in enumerate(criminals):
         edgesInsertCriminals += f'''
-        var edge{i} = db.crime_criminal_edges.firstExample({{"_from": "crimes/{criminal['crime_id']}", "_to": "criminals/{criminal['_key']}"}})
+        var edge{i} = db.crime_criminal.firstExample({{"_from": "crimes/{criminal['crime_id']}", "_to": "criminals/{criminal['_key']}"}})
         if (edge{i} == null) {{
-            db.crime_criminal_edges.save({{
+            db.crime_criminal.save({{
                 _from: "crimes/{criminal['crime_id']}",
                 _to: "criminals/{criminal['_key']}",
                 "type": "perpetrator"
@@ -135,18 +139,22 @@ def transactionQuery(crimes, criminals, associates):
     edgesInsertSuspects = ""
     for criminal in criminals:
         for associate in associates:
-            if criminal['city'] == associate['city'] and 20 <= criminal['age'] <= 30 and 20 <= associate['age'] <= 30:
+            if (criminal['city'] == associate['city'] and 
+                criminal['crime_type'] == associate['criminal_history']):
                 relationship_type = "family" if criminal['last_name'] == associate['last_name'] else "potential suspect"
                 edgesInsertSuspects += f'''
-                db.criminal_associate_edges.save({{
+                var edge{i} = db.criminal_associate_relationship.firstExample({{"_from": "criminals/{criminal['_key']}", "_to": "associates/{associate['_key']}"}})
+                if (edge{i} == null) {{
+                db.criminal_associate_relationship.save({{
                     _from: "criminals/{criminal['_key']}",
                     _to: "associates/{associate['_key']}",
                     "type": "{relationship_type}"
                 }})
-                '''
+            }}
+            '''
     query = {
         "collections": {
-            "write": ["criminals", "crimes", "associates", "crime_criminal_edges", "criminal_associate_edges"]
+            "write": ["criminals", "crimes", "associates", "crime_criminal", "criminal_associate_relationship"]
         },
         "action": f"""
         function () {{
@@ -159,7 +167,6 @@ def transactionQuery(crimes, criminals, associates):
             return "success!";
         }}
         """
-
     }
     return x.db(query, "transaction")
 
@@ -177,7 +184,6 @@ def get_crimes():
             criminals_data = []  # List to store criminals data
             associates_data = []  # List to store associates data
             crimes_list = []  # List to store crimes data
-
             if crimes_data:
                 for crime in crimes_data:
                     # Extract victims data
@@ -203,6 +209,7 @@ def get_crimes():
                             "first_name": crime['crime_perpetrator']['first_name'],
                             "last_name": crime['crime_perpetrator']['last_name'],
                             "age": crime['crime_perpetrator']['age'],
+                            "gender": crime['crime_perpetrator']['gender'],
                             "city": crime['crime_perpetrator']['city'],
                             "location": {"latitude": crime['crime_perpetrator']['location']['latitude'], "longitude": crime['crime_perpetrator']['location']['longitude']},
                             "avatar": crime['crime_perpetrator']['avatar'],
@@ -236,19 +243,23 @@ def get_crimes():
     else:
         response.status = 401
         return json.dumps({"error": "Token is invalid."})
+
 ##############################
 @get('/get-potential-suspects/<criminal_id>')
 def get_potential_suspects(criminal_id):
     # Query to find potential suspects related to a criminal
-    query = f"""
-        LET criminal_custom_id = "{criminal_id}"
+    query = """
+        LET custom_id= @criminal_id
         FOR criminal IN criminals
-            FILTER criminal.id == criminal_custom_id
-            FOR v, e, p IN OUTBOUND criminal._id criminal_associate_edges
+            FILTER criminal.id == custom_id
+            FOR v, e, p IN OUTBOUND criminal._id criminal_associate_relationship
                 RETURN v
         """
     payload = {
-        "query": query
+        "query": query,
+        "bindVars": {
+            "criminal_id": criminal_id
+        }
     }
     response = x.db(payload)  # Execute the query
     if not response.get("error"):

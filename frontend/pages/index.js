@@ -30,12 +30,11 @@ import {
 } from "@chakra-ui/react";
 import MapGL from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MdFilterList, MdOutlineRobbery, MdOutlineCrime, MdOutlineComputer, MdOutlinePeopleAlt } from "react-icons/md";
+import { MdFilterList } from "react-icons/md";
 import styles from "@/styles/Home.module.css";
 import { Marker, Popup, Source, Layer } from "react-map-gl";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
-
 // SERVERSIDE GET ALL CRIMES FROM DATABASE
 export async function getServerSideProps() {
   try {
@@ -59,7 +58,6 @@ export async function getServerSideProps() {
   }
 }
 import * as FaIcons from "react-icons/fa";
-
 function HomePage({ data }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCrime, setSelectedCrime] = useState(null);
@@ -71,8 +69,11 @@ function HomePage({ data }) {
   const [suspects, setSuspects] = useState(null);
   const [selectedGender, setSelectedGender] = useState([]);
   const [key, setKey] = useState(0);
+  // console.log(data);
+  // console.log(selectedCrime);
+  // console.log(suspects);
   const filteredCrimes = data.filter((crime) => {
-    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
+    return (selectedType === "" || crime.crime_type === selectedType) && (selectedSeverity === "" || crime.crime_severity === selectedSeverity) && (selectedGender.length === 0 || selectedGender.includes(crime.criminal.gender));
   });
   const fetchSuspects = async (crime_id) => {
     try {
@@ -83,6 +84,21 @@ function HomePage({ data }) {
       const data = await response.json();
       const results = data.result;
       setSuspects(results);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const updateMap = async () => {
+    try {
+      const response = await fetch(`/api/insertData`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      if (response.status === 200) {
+        console.log("Request succeeded with status 200");
+        window.location.reload();
+      }
     } catch (error) {
       console.log(error);
     }
@@ -118,6 +134,11 @@ function HomePage({ data }) {
   return (
     <>
       <Box className={styles.main_container}>
+        {!suspects && !selectedCrime && (
+          <Button position="absolute" top="10" left="50%" transform="translate(-50%, -50%)" zIndex="55555" onClick={updateMap}>
+            UPDATE CRIMES
+          </Button>
+        )}
         <Box className={styles.map_container}>
           {/* MAP CONFIGURATION */}
           <MapGL
@@ -129,7 +150,7 @@ function HomePage({ data }) {
               minZoom: 6,
               maxZoom: 17,
             }}
-            mapStyle="mapbox://styles/mapbox/satellite-streets-v9"
+            mapStyle="mapbox://styles/mapbox/satellite-v9"
             mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
             keyboard={true}
             interactive={true}
@@ -141,7 +162,6 @@ function HomePage({ data }) {
                 </Button>
               )}
             </Box>
-
             <Drawer size="xs" isOpen={isFilterOpen} placement="left" onClose={onFilterClose}>
               <DrawerOverlay>
                 <DrawerContent className={styles.drawer}>
@@ -182,7 +202,6 @@ function HomePage({ data }) {
                           <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity("")}>
                             All
                           </MenuItem>
-
                           <MenuItem p="2" className={styles.filter_button_drop} onClick={() => setSelectedSeverity(1)}>
                             1
                           </MenuItem>
@@ -219,8 +238,8 @@ function HomePage({ data }) {
               </DrawerOverlay>
             </Drawer>
             {showSuspects && (
-              <Button className={styles.reutn_to_map_button} onClick={handleReturnToMap}>
-                Return To Map
+              <Button position="absolute" top="10" left="50%" transform="translate(-50%, -50%)" zIndex="55555" className={styles.reutn_to_map_button} onClick={handleReturnToMap}>
+                RETURN TO MAP
               </Button>
             )}
             {data && (
@@ -267,7 +286,7 @@ function HomePage({ data }) {
                 {/* SHOW POTENTIAL SUSPECTS WHEN CLICKING THE BUTTON */}
                 {showSuspects &&
                   suspects &&
-                  suspects.slice(0, 4).map((suspect, index) => (
+                  suspects.map((suspect, index) => (
                     <Marker key={index} latitude={parseFloat(suspect.location.latitude)} longitude={parseFloat(suspect.location.longitude)}>
                       <Box>
                         <Icon className={styles.icons_map} as={FaIcons.FaMapMarkerAlt} />
@@ -316,7 +335,7 @@ function HomePage({ data }) {
                           <Tbody>
                             <Tr>
                               <Td>Crime ID</Td>
-                              <Td>{selectedCrime.crime_id}</Td>
+                              <Td>{selectedCrime.criminal.crime_id}</Td>
                             </Tr>
                             <Tr>
                               <Td>Crime Type</Td>
