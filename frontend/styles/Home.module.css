@@ -1,0 +1,51 @@
+.map_container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.main_container {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  z-index: 55555555;
+  height: 100dvh;
+}
+.reutn_to_map_button {
+  position: absolute;
+  left: 90%;
+}
+.criminal_image {
+  margin: auto !important;
+  height: auto !important;
+  padding: 1rem 1rem 0.5rem 1rem;
+}
+
+.drawer {
+  background-color: #212121 !important;
+  color: #fff !important;
+}
+.filter_dropdown {
+  position: absolute;
+  top: 0;
+}
+.filter_button {
+  background-color: #212121 !important;
+  color: #fff !important;
+  border: 1px solid #fff !important;
+}
+.filter_button_drop {
+  background-color: #00000033 !important;
+  color: #fff !important;
+}
+.icons_map {
+  color: #fff !important;
+  font-size: 30px !important;
+  background-color: #212121 !important;
+  padding: 3px !important;
+  border: 1px solid #ffffff6b !important;
+  cursor: pointer;
+}
+.update_data_button {
+  position: absolute;
+  top: 50px;
+}
