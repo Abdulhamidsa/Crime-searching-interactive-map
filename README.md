@@ -25,7 +25,7 @@ To run the frontend part
 ## Access the services:
 Python Application: Access at http://localhost:80
 ArangoDB: Access ArangoDB web interface at http://localhost:8529
-Nextjs: localhost:3000
+Nextjs: access the application at http://localhost:3000
 
 ## Additional Notes
 This setup uses Docker Compose version 3.1.
