@@ -12,11 +12,15 @@ This project showcase an interactive map for crimes located in Copenhagen and th
 1. Clone the repository:
    ```bash
    git clone https://github.com/Abdulhamidsa/Crime-searching-interactive-map
+   ````
+2.  To run the backend:
+   ```bash
    cd backend
    docker-compose up --build
+   ```
 This command builds the Docker images defined in docker-compose.yml and starts the containers.
 
-2. To run the frontend part
+2. To run the frontend:
    ```bash
     cd frontend
     npm install
