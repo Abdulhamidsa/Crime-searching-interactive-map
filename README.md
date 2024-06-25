@@ -2,6 +2,7 @@
 
 ## Description
 This project sets up a Docker environment using Docker Compose with Python and ArangoDB.
+This project showcase an interactive map for crimes located in Copenhagen and their data(criminals, victims, potential other gang members), relying on complex AQL queries and logic.
 
 ## Prerequisites
 - Docker
@@ -15,7 +16,7 @@ This project sets up a Docker environment using Docker Compose with Python and A
    docker-compose up --build
 This command builds the Docker images defined in docker-compose.yml and starts the containers.
 
-To run the frontend part
+2. To run the frontend part
    ```bash
     cd frontend
     npm install
