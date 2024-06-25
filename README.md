@@ -13,7 +13,7 @@ This project showcase an interactive map for crimes located in Copenhagen and th
    ```bash
    git clone https://github.com/Abdulhamidsa/Crime-searching-interactive-map
    ````
-2.  To run the backend:
+2. To run the backend:
    ```bash
    cd backend
    docker-compose up --build
